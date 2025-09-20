@@ -15,7 +15,6 @@ app = FastAPI()
 # Edit the code below this line
 ############################################
 
-
 @app.get("/")
 async def read_root():
     """
@@ -36,7 +35,24 @@ async def create_task(task_data: TaskCreate):
     Returns:
         TaskRead: The created task data
     """
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO TASKS (TITLE, DESCRIPTION, COMPLETED) VALUES (?, ?, ?)",
+        (task_data.title, task_data.description, task_data.completed))
+    
+    conn.commit()
+
+    task_id = cursor.lastrowid
+
+    cursor.execute("SELECT id, title, description, completed FROM TASKS WHERE id = ?", (task_id,))
+    row = cursor.fetchone()
+
+    conn.close()
+
+    return TaskRead(**row)
 
 
 # GET ROUTE to get all tasks
@@ -51,7 +67,16 @@ async def get_tasks():
     Returns:
         list[TaskRead]: A list of all tasks in the database
     """
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, title, description, completed FROM TASKS")
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return [TaskRead(**row) for row in rows]
 
 
 # UPDATE ROUTE data is sent in the body of the request and the task_id is in the URL
