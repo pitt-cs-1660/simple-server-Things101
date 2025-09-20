@@ -47,7 +47,7 @@ async def create_task(task_data: TaskCreate):
 
     task_id = cursor.lastrowid
 
-    cursor.execute("SELECT id, title, description, completed FROM TASKS WHERE id = ?", (task_id,))
+    cursor.execute("SELECT * FROM TASKS WHERE id = ?", (task_id,))
     row = cursor.fetchone()
 
     conn.close()
@@ -92,7 +92,24 @@ async def update_task(task_id: int, task_data: TaskCreate):
     Returns:
         TaskRead: The updated task data
     """
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+                   UPDATE TASKS 
+                   SET title = ?, description = ?, completed = ?
+                   WHERE id = ?
+                   """, (task_data.title, task_data.description, task_data.completed, task_id))
+
+    conn.commit()
+
+    cursor.execute("SELECT * FROM TASKS WHERE id = ?", (task_id,))
+    row = cursor.fetchone()
+
+    conn.close()
+
+    return TaskRead(**row)
 
 
 # DELETE ROUTE task_id is in the URL
@@ -107,4 +124,15 @@ async def delete_task(task_id: int):
     Returns:
         dict: A message indicating that the task was deleted successfully
     """
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM TASKS WHERE id = ?", (task_id,))
+    conn.commit()
+    
+    conn.close()
+
+    return {"message": f"Task {task_id} deleted successfully"}
+
+
